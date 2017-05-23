@@ -23,7 +23,8 @@ const fileGlob = (pattern, dir) => new Promise((resolve, reject) => {
   });
 });
 
-const babelConfig = ({ isSrc = false, relSource } = {}) => ({
+const babelConfig = ({ isSrc = false, relSource, filename } = {}) => ({
+  filename,
   sourceMaps: true,
   sourceFileName: relSource,
   plugins: [
@@ -74,17 +75,18 @@ const main = async (argv) => {
 
       if (error) throw new Error(error);
       if (logs.error) {
-        const errorMsg = logs.error.join('\n');
-        throw new Error(errorMsg);
+        for (const error of logs.error) {
+          console.log(error);
+        }
       }
 
       // TODO: Log warnings maybe?
       
       const fsCode = await fs.readFile(fsFile, 'utf-8');
       try {
-        const transformed = babel.transformFromAst(data, fsCode, babelConfig({ isSrc, isTest }));
-
         const relPath = path.relative(__dirname, fsFile);
+        const transformed = babel.transformFromAst(data, fsCode, babelConfig({ isSrc, isTest, filename: relPath }));
+
         const outFile = path.join(outDir, replaceExt(relPath, '.js'));
         const outFileDir = path.dirname(outFile);
         await fs.mkdirp(outFileDir);

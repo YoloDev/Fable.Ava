@@ -44,12 +44,12 @@ type ITestContext =
 
 type TestImpl = ITestContext -> Promise<unit>
 
-[<Import("default", from="ava")>]
+//[<Import("default", from="ava")>]
 module Test =
-  [<Emit("$0($1)")>]
+  [<Import("default", from="ava"); Emit("$0($1)")>]
   let create' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0($1,$2)")>]
   let create (name: string) (impl: TestImpl): unit = jsNative
 
   [<Emit("$0.serial($1)")>]

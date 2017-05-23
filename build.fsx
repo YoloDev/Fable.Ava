@@ -150,12 +150,13 @@ Target "TestInstall" (fun _ ->
 
 Target "TestBuild" (fun _ -> 
   forAllTests "build"
-  runDotnet (IO.Path.GetDirectoryName <| Seq.head projects) <| sprintf "fable node-run %s" jsCompiler
+  Environment.SetEnvironmentVariable ("INSTRUMENT_CODE", "1", EnvironmentVariableTarget.Process)
+  // TODO: Specify free port
+  runDotnet (IO.Path.GetDirectoryName <| Seq.head projects) <| sprintf "fable node-run \"%s\"" jsCompiler
 )
 
 Target "Test" (fun _ ->
-  let avaArgs = "test"
-  runYarn rootDir avaArgs
+  runYarn rootDir "test"
 )
 
 // --------------------------------------------------------------------------------------
