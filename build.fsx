@@ -27,7 +27,7 @@ let jsCompiler = FullName "./build.js"
 // Install
 
 let dotnetSDKPath = FullName "./dotnetsdk"
-let dotnetcliVersion = "1.0.1"
+let dotnetcliVersion = "1.0.4"
 let dotnetExePath = dotnetSDKPath </> (if isWindows then "dotnet.exe" else "dotnet")
 
 let runDotnet workingDir args =
