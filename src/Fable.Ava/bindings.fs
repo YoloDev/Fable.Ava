@@ -3,46 +3,47 @@ module Fable.Import.Ava
 open Fable.Core
 open Fable.Import.JS
 
-type IAsserter =
+[<Sealed; Erase>]
+type TestContext internal () =
+  [<Emit("$0.plan($1)")>]
+  member x.Plan (n: int): unit = jsNative
   [<Emit("$0.pass({{$1}})")>]
-  abstract Pass: ?msg: string -> unit
+  member x.Pass (?msg: string): unit = jsNative
   [<Emit("$0.fail({{$1}})")>]
-  abstract Fail: ?msg: string -> unit
+  member x.Fail (?msg: string): unit = jsNative
   [<Emit("$0.truthy($1,{{$2}})")>]
-  abstract Truthy: value: 'a * ?msg: string -> unit
+  member x.Truthy (value: obj, ?msg: string): unit = jsNative
   [<Emit("$0.falsy($1,{{$2}})")>]
-  abstract Falsy: value: 'a * ?msg: string -> unit
+  member x.Falsy (value: obj, ?msg: string): unit = jsNative
   [<Emit("$0.true($1,{{$2}})")>]
-  abstract True: value: bool * ?msg: string -> unit
+  member x.True (value: bool, ?msg: string): unit = jsNative
   [<Emit("$0.false($1,{{$2}})")>]
-  abstract False: value: bool * ?msg: string -> unit
+  member x.False (value: bool, ?msg: string): unit = jsNative
   [<Emit("$0.is($1,$2,{{$3}})")>]
-  abstract Is: value: 'a * expected: 'a * ?msg: string -> unit
+  member x.Is (value: 'a, expected: 'a, ?msg: string): unit = jsNative
   [<Emit("$0.not($1,$2,{{$3}})")>]
-  abstract Not: value: 'a * expected: 'a * ?msg: string -> unit
+  member x.Not (value: 'a, expected: 'a, ?msg: string): unit = jsNative
   [<Emit("$0.deepEqual($1,$2,{{$3}})")>]
-  abstract DeepEqual: value: 'a * expected: 'a * ?msg: string -> unit
+  member x.DeepEqual (value: 'a, expected: 'a, ?msg: string): unit = jsNative
   [<Emit("$0.notDeepEqual($1,$2,{{$3}})")>]
-  abstract NotDeepEqual: value: 'a * expected: 'a * ?msg: string -> unit
+  member x.NotDeepEqual (value: 'a, expected: 'a, ?msg: string): unit = jsNative
   [<Emit("$0.throws($1,null,{{$2}})")>]
-  abstract Throws: fn: (unit -> unit) * ?msg: string -> unit
+  member x.Throws (fn: (unit -> unit), ?msg: string): unit = jsNative
   [<Emit("$0.throws($1,null,{{$2}})")>]
-  abstract Throws: fn: (unit -> Promise<unit>) * ?msg: string -> unit
-  [<Emit("$0.notthrows($1,{{$2}})")>]
-  abstract NotThrows: fn: (unit -> unit) * ?msg: string -> unit
-  [<Emit("$0.notthrows($1,{{$2}})")>]
-  abstract NotThrows: fn: (unit -> Promise<unit>) * ?msg: string -> unit
-  [<Emit("$0.regex($1,$2,{{$3}})")>]
-  abstract Regex: value: string * test: RegExp * ?msg: string -> unit
+  member x.Throws (promise: Promise<unit>, ?msg: string): Promise<unit> = jsNative
+  [<Emit("$0.notThrows($1,{{$2}})")>]
+  member x.NotThrows (fn: (unit -> unit), ?msg: string): unit = jsNative
+  [<Emit("$0.notThrows($1,{{$2}})")>]
+  member x.NotThrows (promise: Promise<unit>, ?msg: string): Promise<unit> = jsNative
+  // TODO: Bug weird bug with regex
+  //[<Emit("$0.regex($1,$2,{{$3}})")>]
+  //member x.Regex (value: string, test: System.Text.RegularExpressions.Regex, ?msg: string): unit = jsNative
   [<Emit("$0.ifError($1,{{$2}})")>]
-  abstract IfError: error: obj * ?msg: string -> unit
+  member x.IfError (error: obj, ?msg: string): unit = jsNative
   [<Emit("$0.snapshot($1,{{$2}})")>]
-  abstract Snapshot: error: obj * ?msg: string -> unit
+  member x.Snapshot (error: obj, ?msg: string): unit = jsNative
 
-type ITestContext =
-  inherit IAsserter
-
-type TestImpl = ITestContext -> Promise<unit>
+type TestImpl = TestContext -> Promise<unit>
 
 //[<Import("default", from="ava")>]
 module Test =

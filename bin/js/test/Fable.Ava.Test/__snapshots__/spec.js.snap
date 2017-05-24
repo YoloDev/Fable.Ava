@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`snapshot 1`] = `
+Object {
+  "kind": "snapshot",
+  "num": 1,
+  "test": true,
+  "with": "ava",
+}
+`;
+
+exports[`snapshot 2`] = `
+Object {
+  "kind": "snapshot",
+  "num": 1,
+  "test": true,
+  "with": "ava",
+}
+`;
