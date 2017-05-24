@@ -29,8 +29,11 @@ coverage/
 [Dd]ebug/
 [Rr]elease/
 x64/
-[Bb]in/
+[Bb]in/*
 [Oo]bj/
+
+# Snapshots
+![Bb]in/**/__snapshots__/*
 
 # MSTest test Results
 [Tt]est[Rr]esult*/

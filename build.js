@@ -5,6 +5,7 @@ const babel = require('babel-core');
 const client = require('fable-utils/client');
 const babelPlugins = require('fable-utils/babel-plugins');
 const istanbul = require('babel-plugin-istanbul').default;
+const sourcemap = require('convert-source-map');
 const pkg = require('./package.json');
 
 const instrument = process.env.INSTRUMENT_CODE;
@@ -89,6 +90,12 @@ const main = async (argv) => {
 
         const outFile = path.join(outDir, replaceExt(relPath, '.js'));
         const outFileDir = path.dirname(outFile);
+        if (transformed.map) {
+          const relSrcPath = path.relative(outFileDir, fsFile);
+          const map = sourcemap.fromObject(transformed.map).setProperty('sources', [relSrcPath]);
+          transformed.code += '\n\n' + map.toComment() + '\n';
+        }
+
         await fs.mkdirp(outFileDir);
         await fs.writeFile(outFile, transformed.code, { encoding: 'utf-8' });
       } catch (e) {
