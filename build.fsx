@@ -47,7 +47,11 @@ let runYarn workingDir args =
   // printfn "yarn %s" args
   let result =
     ExecProcess (fun info ->
-      info.FileName <- "yarn"
+      let cmd, args =
+        match isWindows with
+        | false -> "yarn", args
+        | true -> "cmd", sprintf "/c yarn %s" args
+      info.FileName <- cmd
       info.WorkingDirectory <- workingDir
       info.Arguments <- args) TimeSpan.MaxValue
   match result with
