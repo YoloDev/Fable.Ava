@@ -17,3 +17,21 @@ Object {
   "with": "ava",
 }
 `;
+
+exports[`spec:snapshot 1`] = `
+Object {
+  "kind": "snapshot",
+  "num": 1,
+  "test": true,
+  "with": "ava",
+}
+`;
+
+exports[`spec:snapshot 2`] = `
+Object {
+  "kind": "snapshot",
+  "num": 1,
+  "test": true,
+  "with": "ava",
+}
+`;

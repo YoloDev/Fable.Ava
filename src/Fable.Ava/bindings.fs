@@ -45,7 +45,6 @@ type TestContext internal () =
 
 type TestImpl = TestContext -> Promise<unit>
 
-//[<Import("default", from="ava")>]
 module Test =
   [<Import("default", from="ava"); Emit("$0($1)")>]
   let create' (impl: TestImpl): unit = jsNative
@@ -53,53 +52,53 @@ module Test =
   [<Import("default", from="ava"); Emit("$0($1,$2)")>]
   let create (name: string) (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.serial($1)")>]
+  [<Import("default", from="ava"); Emit("$0.serial($1)")>]
   let serial' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.serial($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0.serial($1,$2)")>]
   let serial (name: string) (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.only($1)")>]
+  [<Import("default", from="ava"); Emit("$0.only($1)")>]
   let only' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.only($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0.only($1,$2)")>]
   let only (name: string) (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.skip($1)")>]
+  [<Import("default", from="ava"); Emit("$0.skip($1)")>]
   let skip' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.skip($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0.skip($1,$2)")>]
   let skip (name: string) (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.todo($1)")>]
+  [<Import("default", from="ava"); Emit("$0.todo($1)")>]
   let todo (name: string): unit = jsNative
 
-  [<Emit("$0.failing($1)")>]
+  [<Import("default", from="ava"); Emit("$0.failing($1)")>]
   let failing' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.failing($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0.failing($1,$2)")>]
   let failing (name: string) (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.before($1)")>]
+  [<Import("default", from="ava"); Emit("$0.before($1)")>]
   let before' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.before($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0.before($1,$2)")>]
   let before (name: string) (impl: TestImpl): unit = jsNative
   
-  [<Emit("$0.after($1)")>]
+  [<Import("default", from="ava"); Emit("$0.after($1)")>]
   let after' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.after($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0.after($1,$2)")>]
   let after (name: string) (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.beforeEach($1)")>]
+  [<Import("default", from="ava"); Emit("$0.beforeEach($1)")>]
   let beforeEach' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.beforeEach($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0.beforeEach($1,$2)")>]
   let beforeEach (name: string) (impl: TestImpl): unit = jsNative
   
-  [<Emit("$0.afterEach($1)")>]
+  [<Import("default", from="ava"); Emit("$0.afterEach($1)")>]
   let afterEach' (impl: TestImpl): unit = jsNative
 
-  [<Emit("$0.afterEach($1,$2)")>]
+  [<Import("default", from="ava"); Emit("$0.afterEach($1,$2)")>]
   let afterEach (name: string) (impl: TestImpl): unit = jsNative
