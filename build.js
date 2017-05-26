@@ -8,7 +8,7 @@ const istanbul = require('babel-plugin-istanbul').default;
 const sourcemap = require('convert-source-map');
 const pkg = require('./package.json');
 
-const instrument = process.env.INSTRUMENT_CODE;
+const instrument = Boolean(process.env.INSTRUMENT_CODE);
 
 const replaceExt = (file, ext) => 
   path.join(path.dirname(file), path.basename(file, path.extname(file))) + ext;
@@ -46,6 +46,7 @@ const babelConfig = ({ isSrc = false, relSource, filename } = {}) => ({
 });
 
 const main = async (argv) => {
+  console.log(`Instrument code: ${Boolean(process.env.INSTRUMENT_CODE)}`);
   const port = process.env.FABLE_SERVER_PORT;
   if (!port) {
     console.log(`fable port not set`);
@@ -55,6 +56,9 @@ const main = async (argv) => {
   let errors = 0;
   const outDir = path.join(path.resolve(__dirname), 'bin', 'js');
   const projects = await fileGlob('**/*.fsproj', __dirname);
+  const srcDir = path.normalize(path.join(__dirname, 'src')).toLowerCase() + path.sep;
+  const testDir = path.normalize(path.join(__dirname, 'test')).toLowerCase() + path.sep;
+
   for (const projFile of projects) {
     console.log(`Load ${projFile} into server.`);
     const msg = {
@@ -64,12 +68,12 @@ const main = async (argv) => {
     await client.send(port, JSON.stringify(msg));
     
     const projDir = path.dirname(projFile);
-    const isTest = projFile.startsWith(path.join(__dirname, 'test'));
-    const isSrc = projFile.startsWith(path.join(__dirname, 'src'));
+    const isTest = path.normalize(projFile).toLowerCase().startsWith(testDir);
+    const isSrc = path.normalize(projFile).toLowerCase().startsWith(srcDir);
     const files = await fileGlob('**/*.fs', projDir);
 
     for (const fsFile of files) {
-      console.log(`Compile ${fsFile}`);
+      console.log(`Compile ${fsFile} (${JSON.stringify({isTest, isSrc})})`);
       const msg = { path: fsFile };
       const data = JSON.parse(await client.send(port, JSON.stringify(msg)));
       const { error = null, logs = {} } = data;
@@ -95,6 +99,10 @@ const main = async (argv) => {
           const relSrcPath = path.relative(outFileDir, fsFile);
           const map = sourcemap.fromObject(transformed.map).setProperty('sources', [relSrcPath]);
           transformed.code += '\n\n' + map.toComment() + '\n';
+
+          // TODO: For debugging purposes
+          //await fs.mkdirp(outFileDir);
+          //await fs.writeFile(outFile + '.map', map.toJSON(2), { encoding: 'utf-8' });
         }
 
         await fs.mkdirp(outFileDir);

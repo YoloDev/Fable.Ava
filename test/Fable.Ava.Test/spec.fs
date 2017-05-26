@@ -109,6 +109,8 @@ let messageTwiceFails (a: Assert.Assert) = spec {
   do! Assert.throws <| fun () -> a <?> "msg1" <?> "msg2" |> ignore
 }
 
+let addTest name spec = Test.create name (Spec.toTest spec)
+
 spec {
   do! Spec.plan 9
 
@@ -120,7 +122,7 @@ spec {
 
   do! Assert.pass
   do! Assert.pass <?> "pass"
-} |> Spec.toTest |> Test.create "pass"
+} |> addTest "pass"
 
 spec {
   do! Spec.plan 7
@@ -132,7 +134,7 @@ spec {
   do! mockCall (Assert.fail <?> "foo") (AsserterMock.fail (Some "foo"))
 
   // Assert.fail can't be used
-} |> Spec.toTest |> Test.create "fail"
+} |> addTest "fail"
 
 spec {
   do! Spec.plan 9
@@ -145,7 +147,7 @@ spec {
 
   do! Assert.isTruthy true
   do! Assert.isTruthy true <?> "isTruthy"
-} |> Spec.toTest |> Test.create "isTruthy"
+} |> addTest "isTruthy"
 
 spec {
   do! Spec.plan 9
@@ -158,7 +160,7 @@ spec {
 
   do! Assert.isFalsy false
   do! Assert.isFalsy false <?> "isFalsy"
-} |> Spec.toTest |> Test.create "isFalsy"
+} |> addTest "isFalsy"
 
 spec {
   do! Spec.plan 9
@@ -171,7 +173,7 @@ spec {
 
   do! Assert.isTrue true
   do! Assert.isTrue true <?> "isTrue"
-} |> Spec.toTest |> Test.create "isTrue"
+} |> addTest "isTrue"
 
 spec {
   do! Spec.plan 9
@@ -184,7 +186,7 @@ spec {
 
   do! Assert.isFalse false
   do! Assert.isFalse false <?> "isTrue"
-} |> Spec.toTest |> Test.create "isFalse"
+} |> addTest "isFalse"
 
 spec {
   do! Spec.plan 9
@@ -200,7 +202,7 @@ spec {
 
   do! Assert.isSame obj1 obj1
   do! Assert.isSame obj1 obj1 <?> "isSame"
-} |> Spec.toTest |> Test.create "isSame"
+} |> addTest "isSame"
 
 spec {
   do! Spec.plan 9
@@ -216,7 +218,7 @@ spec {
 
   do! Assert.isNotSame obj1 obj2
   do! Assert.isNotSame obj1 obj2 <?> "isNotSame"
-} |> Spec.toTest |> Test.create "isNotSame"
+} |> addTest "isNotSame"
 
 spec {
   do! Spec.plan 9
@@ -232,7 +234,7 @@ spec {
 
   do! Assert.isDeepEqual obj1 obj2
   do! Assert.isDeepEqual obj1 obj2 <?> "isDeepEqual"
-} |> Spec.toTest |> Test.create "isDeepEqual"
+} |> addTest "isDeepEqual"
 
 spec {
   do! Spec.plan 9
@@ -248,7 +250,7 @@ spec {
 
   do! Assert.isNotDeepEqual obj1 obj2
   do! Assert.isNotDeepEqual obj1 obj2 <?> "isNotDeepEqual"
-} |> Spec.toTest |> Test.create "isNotDeepEqual"
+} |> addTest "isNotDeepEqual"
 
 spec {
   do! Spec.plan 9
@@ -263,7 +265,7 @@ spec {
 
   do! Assert.throws fn
   do! Assert.throws fn <?> "throws"
-} |> Spec.toTest |> Test.create "throws"
+} |> addTest "throws"
 
 spec {
   do! Spec.plan 9
@@ -278,7 +280,7 @@ spec {
 
   do! Assert.doesNotThrow fn
   do! Assert.doesNotThrow fn <?> "doesNotThrow"
-} |> Spec.toTest |> Test.create "doesNotThrow"
+} |> addTest "doesNotThrow"
 
 spec {
   do! Spec.plan 9
@@ -293,7 +295,7 @@ spec {
 
   do! Assert.asyncThrows fn
   do! Assert.asyncThrows fn <?> "asyncThrows"
-} |> Spec.toTest |> Test.create "asyncThrows"
+} |> addTest "asyncThrows"
 
 spec {
   do! Spec.plan 9
@@ -308,7 +310,7 @@ spec {
 
   do! Assert.doesNotAsyncThrow fn
   do! Assert.doesNotAsyncThrow fn <?> "doesNotAsyncThrow"
-} |> Spec.toTest |> Test.create "doesNotAsyncThrow"
+} |> addTest "doesNotAsyncThrow"
 
 // spec {
 //   do! Spec.plan 9
@@ -323,7 +325,7 @@ spec {
 
 //   do! Assert.matches "abc" regex
 //   do! Assert.matches "abc" regex <?> "matches"
-// } |> Spec.toTest |> Test.create "matches"
+// } |> addTest "matches"
 
 spec {
   do! Spec.plan 9
@@ -338,7 +340,7 @@ spec {
 
   do! Assert.ifError err
   do! Assert.ifError err <?> "ifError"
-} |> Spec.toTest |> Test.create "ifError"
+} |> addTest "ifError"
 
 spec {
   do! Spec.plan 9
@@ -353,4 +355,5 @@ spec {
   
   do! Assert.snapshot obj
   do! Assert.snapshot obj <?> "snapshot with name"
-} |> Spec.toTest |> Test.create "snapshot"
+} |> addTest "snapshot"
+

@@ -35,6 +35,7 @@ let runDotnet workingDir args =
   // printfn "dotnet %s" args
   let result =
     ExecProcess (fun info ->
+      info.EnvironmentVariables.["INSTRUMENT_CODE"] <- "1"
       info.FileName <- dotnetExePath
       info.WorkingDirectory <- workingDir
       info.Arguments <- args) TimeSpan.MaxValue
@@ -160,7 +161,8 @@ Target "TestBuild" (fun _ ->
 )
 
 Target "Test" (fun _ ->
-  runYarn rootDir "test"
+  runYarn rootDir "test:ci"
+  runYarn rootDir "coverage:show"
 )
 
 // --------------------------------------------------------------------------------------
