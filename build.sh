@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-local args=("run")
+args=("run")
 while [ $# -ne 0 ]
 do
   args+=($1)

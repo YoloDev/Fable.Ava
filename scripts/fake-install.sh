@@ -60,48 +60,12 @@ get_os_download_name_from_platform() {
 
     platform="$1"
     case "$platform" in
-        "centos.7")
-            echo "centos"
-            return 0
-            ;;
-        "debian.8")
-            echo "debian"
-            return 0
-            ;;
-        "fedora.23")
-            echo "fedora.23"
-            return 0
-            ;;
-        "fedora.24")
-            echo "fedora.24"
-            return 0
-            ;;
-        "opensuse.13.2")
-            echo "opensuse.13.2"
-            return 0
-            ;;
-        "opensuse.42.1")
-            echo "opensuse.42.1"
-            return 0
-            ;;
-        "rhel.7"*)
-            echo "rhel"
-            return 0
-            ;;
         "ubuntu.14.04")
-            echo "ubuntu"
+            echo "ubuntu.14.04"
             return 0
             ;;
         "ubuntu.16.04")
             echo "ubuntu.16.04"
-            return 0
-            ;;
-        "ubuntu.16.10")
-            echo "ubuntu.16.10"
-            return 0
-            ;;
-        "alpine.3.4.3")
-            echo "alpine"
             return 0
             ;;
     esac
@@ -131,7 +95,7 @@ get_distro_specific_os_name() {
 
     local uname=$(uname)
     if [ "$uname" = "Darwin" ]; then
-        echo "osx"
+        echo "osx.10.11"
         return 0
     elif [ -n "$runtime_id" ]; then
         echo $(get_os_download_name_from_platform "${runtime_id%-*}" || echo "${runtime_id%-*}")
@@ -385,17 +349,15 @@ construct_download_link() {
 }
 
 # args:
-# azure_feed - $1
-# channel - $2
-# normalized_architecture - $3
-# specific_version - $4
+# repo - $1
+# normalized_architecture - $2
+# specific_version - $3
 construct_alt_download_link() {
     eval $invocation
     
-    local azure_feed=$1
-    local channel=$2
-    local normalized_architecture=$3
-    local specific_version=${4//[$'\t\r\n']}
+    local github_repo=$1
+    local normalized_architecture=$2
+    local specific_version=${3//[$'\t\r\n']}
     
     local distro_specific_osname
     distro_specific_osname=$(get_distro_specific_os_name) || return 1
