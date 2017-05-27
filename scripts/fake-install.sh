@@ -576,6 +576,7 @@ install_fake() {
     
     say "Extracting zip"
     extract_fake_package $zip_path $install_root
+    chmod +x "$install_root/fake"
     
     return 0
 }
