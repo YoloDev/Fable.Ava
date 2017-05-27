@@ -447,7 +447,7 @@ extract_fake_package() {
     unzip -a "$zip_path" -d "$temp_out_path" > /dev/null || failed=true
     
     say_verbose "cp -r $temp_out_path/ $out_path/"
-    cp -r "$temp_out_path/" "$out_path"
+    cp -r "$temp_out_path/" "$out_path/"
     ls -la "$temp_out_path" >&3
     ls -la "$out_path" >&3
     rm -rf $temp_out_path
