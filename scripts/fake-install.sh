@@ -361,13 +361,9 @@ construct_alt_download_link() {
     
     local distro_specific_osname
     distro_specific_osname=$(get_distro_specific_os_name) || return 1
+    say_verbose "distro_specific_osname=$distro_specific_osname"
 
-    local alt_download_link=null
-    if [ "$shared_runtime" = true ]; then
-        alt_download_link="$azure_feed/Runtime/$specific_version/dotnet-$distro_specific_osname-$normalized_architecture.$specific_version.tar.gz"
-    else
-        alt_download_link="$azure_feed/Sdk/$specific_version/dotnet-dev-$distro_specific_osname-$normalized_architecture.$specific_version.tar.gz"
-    fi
+    local alt_download_link=$(download "https://api.github.com/repos/$github_repo/releases/tags/$specific_version" | jq -r ".assets | .[] | select(.name | endswith(\"$distro_specific_osname-$normalized_architecture.zip\")) | .browser_download_url")
     
     echo "$alt_download_link"
     return 0
