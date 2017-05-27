@@ -541,7 +541,7 @@ calculate_vars() {
     say_verbose "download_link=$download_link"
 
     if [ "$(uname)" = "Linux" ]; then
-        alt_download_link=$(construct_alt_download_link $azure_feed $channel $normalized_architecture $specific_version)
+        alt_download_link=$(construct_alt_download_link $github_repo $normalized_architecture $specific_version)
         say_verbose "alt_download_link=$alt_download_link"
     fi
 
