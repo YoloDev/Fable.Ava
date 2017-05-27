@@ -1,20 +1,14 @@
-#!/bin/bash
-if test "$OS" = "Windows_NT"
-then
-  # use .Net
-  .paket/paket.exe restore
-  exit_code=$?
-  if [ $exit_code -ne 0 ]; then
-  	exit $exit_code
-  fi
+#!/usr/bin/env bash
+local args=("run")
+while [ $# -ne 0 ]
+do
+  args+=($1)
+  shift
+done
 
-  packages/build/FAKE/tools/FAKE.exe $@ --fsiargs build.fsx
-else
-  # use mono
-  mono .paket/paket.exe restore
-  exit_code=$?
-  if [ $exit_code -ne 0 ]; then
-  	exit $exit_code
-  fi
-  mono packages/build/FAKE/tools/FAKE.exe $@ --fsiargs -d:MONO build.fsx
-fi
+repoFolder="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+pushd $repoFolder
+source ./scripts/fake-install.sh
+popd
+
+fake "${args[@]}"

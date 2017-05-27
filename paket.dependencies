@@ -1,15 +1,8 @@
-source https://nuget.org/api/v2
+source https://api.nuget.org/v3/index.json
 
 nuget FSharp.Core redirects:force, content:none
 nuget Fable.Core
-nuget Fable.PowerPack
 
 group Build
-framework: net46
-  source https://nuget.org/api/v2
-  nuget FSharp.Core redirects:force, content:none
-  nuget FAKE
-  nuget FSharp.Formatting
+  source https://api.nuget.org/v3/index.json
   nuget Fable.Compiler
-
-  github fsharp/FAKE modules/Octokit/Octokit.fsx
