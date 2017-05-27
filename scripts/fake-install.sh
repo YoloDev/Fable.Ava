@@ -448,6 +448,7 @@ extract_fake_package() {
     
     say_verbose "cp -r $temp_out_path/ $out_path"
     cp -r "$temp_out_path/" "$out_path"
+    ls -la "$out_path" >&3
     rm -rf $temp_out_path
     
     if [ "$failed" = true ]; then

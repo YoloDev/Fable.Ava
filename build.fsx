@@ -3,3 +3,5 @@ file ./paket.dependencies
 group Build
 -- Fake Dependencies -- *)
 #load "./.fake/build.fsx/loadDependencies.fsx"
+
+printfn "great success?"
