@@ -11,4 +11,4 @@ pushd $repoFolder
 source ./scripts/fake-install.sh
 popd
 
-fake "${args[@]}"
+Fake "${args[@]}"
