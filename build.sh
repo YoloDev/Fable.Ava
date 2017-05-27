@@ -11,4 +11,5 @@ pushd $repoFolder
 source ./scripts/fake-install.sh
 popd
 
+mkdir -p "./.paket"
 Fake "${args[@]}"

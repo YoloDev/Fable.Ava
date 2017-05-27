@@ -2,6 +2,7 @@ source https://api.nuget.org/v3/index.json
 
 nuget FSharp.Core redirects:force, content:none
 nuget Fable.Core
+nuget Microsoft.AspNetCore.Mvc
 
 group Build
   source https://api.nuget.org/v3/index.json
