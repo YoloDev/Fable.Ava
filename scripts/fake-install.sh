@@ -590,7 +590,7 @@ install_dir="<auto>"
 architecture="<auto>"
 dry_run=false
 no_path=false
-verbose=false
+verbose=true
 
 while [ $# -ne 0 ]
 do
