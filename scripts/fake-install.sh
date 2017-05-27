@@ -591,6 +591,7 @@ architecture="<auto>"
 dry_run=false
 no_path=false
 verbose=true
+runtime_id=""
 
 while [ $# -ne 0 ]
 do
