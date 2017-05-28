@@ -1,15 +1,7 @@
 #!/usr/bin/env bash
+# Partly from https://github.com/dotnet/cli/blob/rel/1.0.0/scripts/obtain/dotnet-install.sh, but rewritten
 # Copyright (c) .NET Foundation and contributors. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#
-
-# Stop script on NZEC
-set -e
-# Stop script if unbound variable found (use ${var:-} if intentional)
-set -u
-# By default cmd1 | cmd2 returns exit code of cmd2 regardless of cmd1 success
-# This is causing it to fail
-set -o pipefail
 
 # Use in the the functions: eval $invocation
 invocation='say_verbose "Calling: ${yellow:-}${FUNCNAME[0]} ${green:-}$*${normal:-}"'
@@ -40,13 +32,13 @@ if [ -t 1 ]; then
 fi
 
 say_err() {
-    printf "%b\n" "${red:-}fake-install: Error: $1${normal:-}" >&2
+    printf "%b\n" "${red:-}fake-boot: Error: $1${normal:-}" >&2
 }
 
 say() {
     # using stream 3 (defined in the beginning) to not interfere with stdout of functions
     # which may be used as return value
-    printf "%b\n" "${cyan:-}fake-install:${normal:-} $1" >&3
+    printf "%b\n" "${cyan:-}fake-boot:${normal:-} $1" >&3
 }
 
 say_verbose() {
@@ -55,85 +47,66 @@ say_verbose() {
     fi
 }
 
-get_os_download_name_from_platform() {
-    eval $invocation
-
-    platform="$1"
-    case "$platform" in
-        "ubuntu.14.04")
-            echo "ubuntu.14.04"
-            return 0
-            ;;
-        "ubuntu.16.04")
-            echo "ubuntu.16.04"
-            return 0
-            ;;
-    esac
-    return 1
-}
-
 get_current_os_name() {
     eval $invocation
 
     local uname=$(uname)
-    if [ "$uname" = "Darwin" ]; then
+    if test "$OS" = "Windows_NT"; then
+        echo "win7"
+        return 0
+    elif [ "$uname" = "Darwin" ]; then
         echo "osx.10.11"
         return 0
     else
-        if [ "$uname" = "Linux" ]; then
-            echo "linux"
+        # Detect Distro
+        if [ "$(cat /etc/*-release | grep -cim1 ubuntu)" -eq 1 ]; then
+            
+            if [ "$(cat /etc/*-release | grep -cim1 16.04)" -eq 1 ]; then
+                echo "ubuntu.16.04"
+                return 0
+            fi
+            echo "ubuntu.14.04"
+            #echo "ubuntu"
             return 0
-        fi
-    fi
-    
-    say_err "OS name could not be detected: $ID.$VERSION_ID"
-    return 1
-}
-
-get_distro_specific_os_name() {
-    eval $invocation
-
-    local uname=$(uname)
-    if [ "$uname" = "Darwin" ]; then
-        echo "osx.10.11"
-        return 0
-    elif [ -n "$runtime_id" ]; then
-        echo $(get_os_download_name_from_platform "${runtime_id%-*}" || echo "${runtime_id%-*}")
-        return 0
-    else
-        if [ -e /etc/os-release ]; then
-            . /etc/os-release
-            os=$(get_os_download_name_from_platform "$ID.$VERSION_ID" || echo "")
-            if [ -n "$os" ]; then
-                echo "$os"
+        elif [ "$(cat /etc/*-release | grep -cim1 centos)" -eq 1 ]; then
+            echo "centos.7"
+            return 0
+        elif [ "$(cat /etc/*-release | grep -cim1 rhel)" -eq 1 ]; then
+            echo "rhel.7.0"
+            return 0
+        elif [ "$(cat /etc/*-release | grep -cim1 debian)" -eq 1 ]; then
+            echo "debian.8"
+            return 0
+        elif [ "$(cat /etc/*-release | grep -cim1 fedora)" -eq 1 ]; then
+            if [ "$(cat /etc/*-release | grep -cim1 23)" -eq 1 ]; then
+                echo "fedora.23"
+                return 0
+            fi
+        elif [ "$(cat /etc/*-release | grep -cim1 opensuse)" -eq 1 ]; then
+            if [ "$(cat /etc/*-release | grep -cim1 13.2)" -eq 1 ]; then
+                echo "opensuse.13.2"
                 return 0
             fi
         fi
     fi
     
-    say_err "OS name could not be detected: $ID.$VERSION_ID"
+    say_err "OS name could not be detected"
     return 1
 }
 
 machine_has() {
     eval $invocation
-
-    hash "$1" > /dev/null 2>&1
+    
+    which "$1" > /dev/null 2>&1
     return $?
 }
 
 check_min_reqs() {
-    local hasMinimum=false
-    if machine_has "curl"; then
-        hasMinimum=true
-    elif machine_has "wget"; then
-        hasMinimum=true
-    fi
-
-    if [ "$hasMinimum" = "false" ]; then
-        say_err "curl (recommended) or wget are required to download fake. Install missing prerequisite to proceed."
+    if ! machine_has "curl"; then
+        say_err "curl is required to download dotnet. Install curl to proceed."
         return 1
     fi
+    
     return 0
 }
 
@@ -142,7 +115,7 @@ check_pre_reqs() {
     
     local failing=false;
 
-    if [ "${FAKE_INSTALL_SKIP_PREREQS:-}" = "1" ]; then
+    if [ "${DOTNET_INSTALL_SKIP_PREREQS:-}" = "1" ]; then
         return 0
     fi
 
@@ -156,6 +129,7 @@ check_pre_reqs() {
 
         [ -z "$($LDCONFIG_COMMAND -p | grep libunwind)" ] && say_err "Unable to locate libunwind. Install libunwind to continue" && failing=true
         [ -z "$($LDCONFIG_COMMAND -p | grep libssl)" ] && say_err "Unable to locate libssl. Install libssl to continue" && failing=true
+        [ -z "$($LDCONFIG_COMMAND -p | grep libcurl)" ] && say_err "Unable to locate libcurl. Install libcurl to continue" && failing=true
         [ -z "$($LDCONFIG_COMMAND -p | grep libicu)" ] && say_err "Unable to locate libicu. Install libicu to continue" && failing=true
     fi
 
@@ -217,36 +191,19 @@ combine_paths() {
 
 get_machine_architecture() {
     eval $invocation
-    
-    # Currently the only one supported
-    echo "x64"
-    return 0
+    if [ $(uname -m) == 'x86_64' ]; then
+        echo "x64"
+        return 0
+    elif test "$OS" = "Windows_NT"; then
+        echo "x86"
+        return 0
+    else
+        # Currently the only one supported
+        echo "x64"
+        return 0
+    fi
 }
 
-# args:
-# architecture - $1
-get_normalized_architecture_from_architecture() {
-    eval $invocation
-    
-    local architecture=$(to_lowercase $1)
-    case $architecture in
-        \<auto\>)
-            echo "$(get_normalized_architecture_from_architecture $(get_machine_architecture))"
-            return 0
-            ;;
-        amd64|x64)
-            echo "x64"
-            return 0
-            ;;
-        x86)
-            say_err "Architecture \`x86\` currently not supported"
-            return 1
-            ;;
-    esac
-   
-    say_err "Architecture \`$architecture\` not supported. If you think this is a bug, please report it at https://github.com/dotnet/cli/issues"
-    return 1
-}
 
 # version_info is a conceptual two line string representing commit hash and 4-part version
 # format:
@@ -273,132 +230,84 @@ get_commit_hash_from_version_info() {
 
 # args:
 # install_root - $1
+# specific_version - $2
 is_fake_package_installed() {
     eval $invocation
     
     local install_root=$1
+    local specific_version=${2:-}
     
-    if [ -d "$install_root" ]; then
+    local fake_package_path=$(combine_paths $(combine_paths $install_root $specific_version) $osname-$architecture)
+    say_verbose "is_fake_package_installed: fake_package_path=$fake_package_path"
+    
+    if [ -d "$fake_package_path" ]; then
         return 0
     else
         return 1
     fi
 }
 
-# args:
-# repo - $1
-# normalized_architecture - $2
-get_latest_version_info() {
-    eval $invocation
-    
-    local github_repo=$1
-    local normalized_architecture=$2
-
-    local releases_url="https://api.github.com/repos/$github_repo/releases"
-    say_verbose "get_latest_version_info: releases url: $releases_url"
-    
-    download $releases_url | jq -r '.[0].tag_name'
-    return $?
-}
-
-# args:
-# repo - $1
-# normalized_architecture - $2
-# version - $3
-get_specific_version_from_version() {
-    eval $invocation
-    
-    local github_repo=$1
-    local normalized_architecture=$2
-    local version=$(to_lowercase $3)
-
-    case $version in
-        latest)
-            local version_info
-            version_info="$(get_latest_version_info $github_repo $normalized_architecture)" || return 1
-            say_verbose "get_specific_version_from_version: version_info=$version_info"
-            echo "$version_info" | get_version_from_version_info
-            return 0
-            ;;
-        *)
-            echo $version
-            return 0
-            ;;
-    esac
-}
-
-# args:
-# repo - $1
-# normalized_architecture - $2
-# specific_version - $3
-construct_download_link() {
-    eval $invocation
-    
-    local github_repo=$1
-    local normalized_architecture=$2
-    local specific_version=${3//[$'\t\r\n']}
-    
-    local osname
-    osname=$(get_current_os_name) || return 1
-    say_verbose "osname=$osname"
-
-    local download_link=$(download "https://api.github.com/repos/$github_repo/releases/tags/$specific_version" | jq -r ".assets | .[] | select(.name | endswith(\"$osname-$normalized_architecture.zip\")) | .browser_download_url")
-    
-    echo "$download_link"
-    return 0
-}
-
-# args:
-# repo - $1
-# normalized_architecture - $2
-# specific_version - $3
-construct_alt_download_link() {
-    eval $invocation
-    
-    local github_repo=$1
-    local normalized_architecture=$2
-    local specific_version=${3//[$'\t\r\n']}
-    
-    local distro_specific_osname
-    distro_specific_osname=$(get_distro_specific_os_name) || return 1
-    say_verbose "distro_specific_osname=$distro_specific_osname"
-
-    local alt_download_link=$(download "https://api.github.com/repos/$github_repo/releases/tags/$specific_version" | jq -r ".assets | .[] | select(.name | endswith(\"$distro_specific_osname-$normalized_architecture.zip\")) | .browser_download_url")
-    
-    echo "$alt_download_link"
+get_latest_version() {
+    local expectedFile="fake-dotnetcore-$osname-$architecture.zip"
+    local my_specific_version=$(curl -s "https://api.github.com/repos/$github_repo/releases" \
+        | grep browser_download_url \
+        | cut -d '"' -f 4 \
+        | grep "$expectedFile" \
+        | head -n 1 \
+        | cut -d '/' -f 8)
+    if [ -z "$my_specific_version" ]; then
+        say_err "Could not find a version for $expectedFile, please open an issue on https://github.com/fsharp/FAKE/ so that we can add support for it!"
+        return 1
+    fi
+    echo "$my_specific_version"
     return 0
 }
 
 # args:
 # specific_version - $1
-get_user_install_path() {
+construct_download_link() {
     eval $invocation
     
-    local specific_version=$1
-    if [ ! -z "${FAKE_INSTALL_DIR:-}" ]; then
-        echo $FAKE_INSTALL_DIR
-    else
-        echo "$HOME/.fake/sdk/$specific_version"
+    local expectedFile="fake-dotnetcore-$osname-$architecture.zip"
+    
+    local specific_version=${1:-}
+    
+    if [ ! -z "$specific_version" ]; then
+        echo "https://github.com/$github_repo/releases/download/$specific_version/$expectedFile"
+        return 0
     fi
+    
+    local version_file_url=$(curl -s "https://api.github.com/repos/$github_repo/releases" \
+        | grep browser_download_url \
+        | cut -d '"' -f 4 \
+        | grep "$expectedFile" \
+        | head -n 1)
+    
+    echo "$version_file_url"
     return 0
 }
 
 # args:
-# install_dir - $1
-# specific_version - $2
-resolve_installation_path() {
+# specific_version - $1
+construct_packages_download_link() {
     eval $invocation
     
-    local install_dir=$1
-    local specific_version=$2
-    if [ "$install_dir" = "<auto>" ]; then
-        local user_install_path=$(get_user_install_path $specific_version)
-        say_verbose "resolve_installation_path: user_install_path=$user_install_path"
-        echo "$user_install_path"
+    local expectedFile="fake-dotnetcore-packages.zip"
+    
+    local specific_version=${1:-}
+    
+    if [ ! -z "$specific_version" ]; then
+        echo "https://github.com/$github_repo/releases/download/$specific_version/$expectedFile"
         return 0
     fi
     
-    echo "$install_dir"
+    local version_file_url=$(curl -s "https://api.github.com/repos/$github_repo/releases" \
+        | grep browser_download_url \
+        | cut -d '"' -f 4 \
+        | grep "$expectedFile" \
+        | head -n 1)
+    
+    echo "$version_file_url"
     return 0
 }
 
@@ -439,18 +348,24 @@ extract_fake_package() {
     
     local zip_path=$1
     local out_path=$2
+    local optionalPackPath=${3:-}
     
     local temp_out_path=$(mktemp -d $temporary_file_template)
     
     local failed=false
-    say_verbose "unzip -a $zip_path -d $temp_out_path"
-    unzip -a "$zip_path" -d "$temp_out_path" > /dev/null || failed=true
+    #tar -xzf "$zip_path" -C "$temp_out_path" > /dev/null || failed=true
+    unzip "$zip_path" -d "$temp_out_path" > /dev/null || failed=true
     
-    say_verbose "cp -r $temp_out_path/ $out_path/"
-    #bash "cp -avr \"$temp_out_path/*\" \"$out_path/\""
-    rsync -av --delete "$temp_out_path/" "$out_path/" >&3
-    ls -la "$temp_out_path" >&3
-    ls -la "$out_path" >&3
+    local sourceDir="$temp_out_path"
+    if [ ! -z "$optionalPackPath" ]; then
+        if [ -d "$temp_out_path/$optionalPackPath" ]; then
+            sourceDir="$temp_out_path/$optionalPackPath"
+        fi
+    fi
+    
+    cp -R "$sourceDir" "$out_path.temp" || failed=true
+    mv "$out_path.temp" "$out_path"
+    
     rm -rf $temp_out_path
     
     if [ "$failed" = true ]; then
@@ -464,222 +379,137 @@ extract_fake_package() {
 # [out_path] - $2 - stdout if not provided
 download() {
     eval $invocation
-
-    local remote_path=$1
-    local out_path=${2:-}
-
-    local failed=false
-    # Restart the request up to N times if it fails
-    local retries=3
-    # Give up after 120 seconds of retrying
-    local retry_max_time=120
-    if machine_has "curl"; then
-        downloadcurl $remote_path $out_path || failed=true
-    elif machine_has "wget"; then
-        downloadwget $remote_path $out_path || failed=true
-    else
-        failed=true
-    fi
-    if [ "$failed" = true ]; then
-        say_verbose "Download failed: $remote_path"
-        return 1
-    fi
-    return 0
-}
-
-downloadcurl() {
-    eval $invocation
+    
     local remote_path=$1
     local out_path=${2:-}
 
     local failed=false
     if [ -z "$out_path" ]; then
-        curl --fail --retry $retries --retry-max-time $retry_max_time -sSL $remote_path \
-             || wget -qO- $remote_path \
-             || failed=true
+        curl --fail -L -s $remote_path || failed=true
     else
-        curl --fail --retry $retries --retry-max-time $retry_max_time -sSL -o $out_path $remote_path \
-             || wget -qO $out_path $remote_path \
-             || failed=true
+        curl --fail -L -s -o $out_path $remote_path || failed=true
     fi
+    
     if [ "$failed" = true ]; then
-        say_verbose "Curl download failed"
+        say_err "Download failed"
         return 1
     fi
-    return 0
-}
-
-downloadwget() {
-    eval $invocation
-    local remote_path=$1
-    local out_path=${2:-}
-
-    local failed=false
-    if [ -z "$out_path" ]; then
-        wget -q --tries 10 $remote_path || failed=true
-    else
-        wget -v --tries 10 -O $out_path $remote_path || failed=true
-    fi
-    if [ "$failed" = true ]; then
-        say_verbose "Wget download failed"
-        return 1
-    fi
-    return 0
 }
 
 calculate_vars() {
     eval $invocation
     
-    normalized_architecture=$(get_normalized_architecture_from_architecture "$architecture")
-    say_verbose "normalized_architecture=$normalized_architecture"
-    
-    specific_version=$(get_specific_version_from_version $github_repo $normalized_architecture $version)
-    say_verbose "specific_version=$specific_version"
+    architecture=$(get_machine_architecture)
+    osname=$(get_current_os_name)
     if [ -z "$specific_version" ]; then
-        say_err "Could not get version information."
-        return 1
+        specific_version=$(get_latest_version)
+        say_verbose "specific_version=$specific_version"
     fi
-    
-    download_link=$(construct_download_link $github_repo $normalized_architecture $specific_version)
+    download_link=$(construct_download_link $specific_version)
     say_verbose "download_link=$download_link"
-
-    if [ "$(uname)" = "Linux" ]; then
-        alt_download_link=$(construct_alt_download_link $github_repo $normalized_architecture $specific_version)
-        say_verbose "alt_download_link=$alt_download_link"
-    fi
-
-    install_root=$(resolve_installation_path $install_dir $specific_version)
+    
+    packages_download_link=$(construct_packages_download_link  $specific_version)
+    say_verbose "packages_download_link=$packages_download_link"
+    
+    install_root=".fake/bin"
     say_verbose "install_root=$install_root"
+    
+    local postfix=""
+    if beginswith win "$osname"; then
+        postfix=".exe"
+    fi
+    local fake_package_path="$install_root/$specific_version/$osname-$architecture"
+    fake_executable="$fake_package_path/Fake$postfix"
+    
 }
 
-install_fake() {
+install_fake_raw() {
     eval $invocation
-    local download_failed=false
-
-    if is_fake_package_installed $install_root; then
-        say "FAKE SDK version $specific_version is already installed."
+    
+    if is_fake_package_installed $install_root $specific_version; then
+        say "FAKE version $specific_version is already installed."
         return 0
     fi
     
     mkdir -p $install_root
     zip_path=$(mktemp $temporary_file_template)
     say_verbose "Zip path: $zip_path"
-
-    say "Downloading link: $download_link"
-    download "$download_link" $zip_path || download_failed=true
-
-    #  if the download fails, download the alt_download_link [Linux only]
-    if [ "$(uname)" = "Linux" ] && [ "$download_failed" = true ]; then
-        say "Cannot download: $download_link"
-        zip_path=$(mktemp $temporary_file_template)
-        say_verbose "Alternate zip path: $zip_path"
-        say "Downloading alternate link: $alt_download_link"
-        download "$alt_download_link" $zip_path
-    fi
+    
+    say "Downloading $download_link"
+    download "$download_link" $zip_path
+    say_verbose "Downloaded file exists and readable? $(if [ -r $zip_path ]; then echo "yes"; else echo "no"; fi)"
     
     say "Extracting zip"
-    extract_fake_package $zip_path $install_root
-    chmod +x "$install_root/Fake"
+    mkdir -p "$install_root/$specific_version"
+    rm -rf "$install_root/$specific_version/$osname-$architecture"
+    extract_fake_package $zip_path "$install_root/$specific_version/$osname-$architecture" "$osname-$architecture"
+    
+    chmod +x "$fake_executable"
+    
+    return 0
+}
+
+install_fake_packages() {
+    eval $invocation
+    
+    check_min_reqs
+    calculate_vars
+    
+    check_pre_reqs
+    
+    packagesPath="$install_root/$specific_version/packages"
+    if [ -d "$packagesPath" ]; then
+        say "FAKE packages for version $specific_version already installed."
+        return 0
+    fi
+    
+    mkdir -p "$install_root/$specific_version"
+    zip_path=$(mktemp $temporary_file_template)
+    say_verbose "Zip path: $zip_path"
+    
+    say "Downloading $packages_download_link"
+    download "$packages_download_link" $zip_path
+    say_verbose "Downloaded file exists and readable? $(if [ -r $zip_path ]; then echo "yes"; else echo "no"; fi)"
+    
+    say "Extracting zip"
+    mkdir -p "$install_root/$specific_version"
+    extract_fake_package $zip_path "$install_root/$specific_version/packages"
     
     return 0
 }
 
 local_version_file_relative_path="/.version"
 bin_folder_relative_path=""
-temporary_file_template="${TMPDIR:-/tmp}/fake.XXXXXXXXX"
+temporary_file_template="${TMPDIR:-/tmp}/fake-dnc.XXXXXXXXX"
 
-github_repo="fsharp/FAKE"
-version="Latest"
-install_dir="<auto>"
-architecture="<auto>"
-dry_run=false
-no_path=false
-verbose=true
-runtime_id=""
+github_repo="${github_repo:-fsharp/FAKE}"
+verbose=${VERBOSE:-false}
+specific_version=${FAKE_VERSION:-}
 
-while [ $# -ne 0 ]
-do
-    name=$1
-    case $name in
-        -r|--repo)
-            shift
-            github_repo=$1
-            ;;
-        -v|--version)
-            shift
-            version="$1"
-            ;;
-        -i|--install-dir)
-            shift
-            install_dir="$1"
-            ;;
-        --arch|--architecture)
-            shift
-            architecture="$1"
-            ;;
-        --dry-run)
-            dry_run=true
-            ;;
-        --no-path)
-            no_path=true
-            ;;
-        --verbose)
-            verbose=true
-            ;;
-        -?|--?|-h|--help)
-            script_name="$(basename $0)"
-            echo "FAKE Installer"
-            echo "Usage: $script_name [-r|--repo <GITHUB_REPO>] [-v|--version <VERSION>]"
-            echo "       $script_name -h|-?|--help"
-            echo ""
-            echo "$script_name is a simple command line interface for obtaining fake cli."
-            echo ""
-            echo "Options:"
-            echo "  -r,--repo <CHANNEL>            Download from the CHANNEL specified (default: $github_repo)."
-            echo "  -v,--version <VERSION>         Use specific version, or \`latest\`. Defaults to \`latest\`."
-            echo "  -i,--install-dir <DIR>         Install under specified location (see Install Location below)"
-            echo "  --architecture <ARCHITECTURE>  Architecture of .NET Tools. Currently only x64 is supported."
-            echo "  --dry-run                      Do not perform installation. Display download link."
-            echo "  --no-path                      Do not set PATH for the current process."
-            echo "  --verbose                      Display diagnostics information."
-            echo "  -?,--?,-h,--help               Shows this help message"
-            echo ""
-            echo "Install Location:"
-            echo "  Location is chosen in following order:"
-            echo "    - --install-dir option"
-            echo "    - Environmental variable FAKE_INSTALL_DIR"
-            echo "    - $HOME/.fake"
-            exit 0
-            ;;
-        *)
-            say_err "Unknown argument \`$name\`"
-            exit 1
-            ;;
-    esac
 
-    shift
-done
+install_fake() {
+    check_min_reqs
+    calculate_vars
+    
+    check_pre_reqs
+    install_fake_raw
+}
 
-check_min_reqs
-calculate_vars
-if [ "$dry_run" = true ]; then
-    say "Payload URL: $download_link"
-    if [ "$(uname)" = "Linux" ]; then
-        say "Alternate payload URL: $alt_download_link"
+beginswith() { case $2 in "$1"*) true;; *) false;; esac; }
+
+exec_fake () {
+
+    install_fake
+    local failed=false
+    local postfix=""
+    if beginswith win "$osname"; then
+        postfix=".exe"
     fi
-    say "Repeatable invocation: ./$(basename $0) --version $specific_version --repo $github_repo --install-dir $install_dir"
-    exit 0
-fi
+    "$fake_executable" $* || failed=true
 
-check_pre_reqs
-install_fake
-
-bin_path=$(get_absolute_path $(combine_paths $install_root $bin_folder_relative_path))
-if [ "$no_path" = false ]; then
-    say "Adding to current process PATH: \`$bin_path\`. Note: This change will be visible only when sourcing script."
-    export PATH=$bin_path:$PATH
-else
-    say "Binaries of dotnet can be found in $bin_path"
-fi
-
-say "Installation finished successfully."
+    if [ "$failed" = true ]; then
+        say_err "Fake returned nonzero exit code"
+        return 1
+    fi
+    return 0
+}
