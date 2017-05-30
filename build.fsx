@@ -179,7 +179,7 @@ Target "Test" (fun _ ->
 
 Target "Package" (fun _ -> forAllProjects "pack")
 
-Target "PublishNuget" (fun _ -> forAllProjects "push")
+Target "PublishNuget" (fun _ -> forAllProjects <| sprintf "nuget push -n -k \"%s\"" (environVar "MYGET_KEY"))
 
 Target "Publish" DoNothing
 
@@ -202,7 +202,10 @@ Target "ReleaseDocs" DoNothing
   ==> "TestInstall"
   ==> "TestBuild"
   ==> "Test"
-//"TestBuild" ==> "Test"
+
+"Build"
+  ==> "Package"
+  ==> "PublishNuget"
 
 "Publish"
   <== [ "Build"
