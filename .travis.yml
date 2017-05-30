@@ -5,6 +5,10 @@ dist: trusty
 
 cache:
   yarn: true
+  directories:
+    - dotnetsdk
+    - packages
+    - paket-files
 
 addons:
   apt:
