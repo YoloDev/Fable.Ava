@@ -179,7 +179,17 @@ Target "Test" (fun _ ->
 
 Target "Package" (fun _ -> forAllProjects "pack")
 
-Target "PublishNuget" (fun _ -> forAllProjects <| sprintf "nuget push -n -k \"%s\"" (environVar "MYGET_KEY"))
+Target "PublishNuget" (fun _ ->
+  projects
+  |> Seq.iter (fun proj ->
+    let dir = IO.Path.GetDirectoryName proj
+    let packages = !!(sprintf "%s/bin/Debug/*.nupkg" dir)
+    packages
+    |> Seq.iter (fun pkg ->
+      runDotnet dir <| sprintf "nuget push \"%s\" -k \"%s\" -s \"%s\"" pkg (environVar "MYGET_KEY") "https://www.myget.org/F/yolodev/api/v2/package"
+    )
+  )
+)
 
 Target "Publish" DoNothing
 
