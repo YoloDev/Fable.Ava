@@ -127,20 +127,29 @@ Target "Install" (fun _ -> forAllProjects "restore")
 
 Target "Build" (fun _ -> forAllProjects "build")
 
-let release = LoadReleaseNotes "RELEASE_NOTES.md"
+//let version = Shell.Exec ("bash", "./script/git-version.sh", rootDir)
+let version = 
+  let procResult = ExecProcessAndReturnMessages (fun info -> 
+    info.FileName <- "bash"
+    info.Arguments <- "./script/git-version.sh get"
+    info.WorkingDirectory <- rootDir) (TimeSpan.FromMinutes 5.0)
+  match procResult.OK with
+  | true -> (Seq.head procResult.Messages).Trim ()
+  | false -> failwithf "git-version exited with exit code %d. Messages:\n  %s" procResult.ExitCode (String.concat "\n  " procResult.Messages)
 
 // TODO: Do better
 Target "Meta" (fun _ ->
+  printfn "Version: %s" version
   [ "<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">"
-    "<PropertyGroup>"
-    "<Description>Fable Ava Bindings</Description>"
-    sprintf "<PackageProjectUrl>http://%s.github.io/%s</PackageProjectUrl>" gitOwner gitName
-    sprintf "<PackageLicenseUrl>https://raw.githubusercontent.com/%s/%s/master/LICENSE.md</PackageLicenseUrl>" gitOwner gitName
-    sprintf "<RepositoryUrl>%s/%s</RepositoryUrl>" gitHome gitName
-    "<PackageTags>fable;github</PackageTags>"
-    "<Authors>Alxandr</Authors>" 
-    sprintf "<Version>%s</Version>" (string release.SemVer)
-    "</PropertyGroup>"
+    "  <PropertyGroup>"
+    "    <Description>Fable Ava Bindings</Description>"
+    sprintf "    <PackageProjectUrl>http://%s.github.io/%s</PackageProjectUrl>" gitOwner gitName
+    sprintf "    <PackageLicenseUrl>https://raw.githubusercontent.com/%s/%s/master/LICENSE.md</PackageLicenseUrl>" gitOwner gitName
+    sprintf "    <RepositoryUrl>%s/%s</RepositoryUrl>" gitHome gitName
+    "    <PackageTags>fable;github</PackageTags>"
+    "    <Authors>Alxandr</Authors>" 
+    sprintf "    <Version>%s</Version>" version
+    "  </PropertyGroup>"
     "</Project>" ]
   |> WriteToFile false "Meta.props"
 )

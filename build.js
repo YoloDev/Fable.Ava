@@ -83,7 +83,7 @@ const main = async (argv) => {
         for (const error of logs.error) {
           console.log(error);
         }
-        //errors++;
+        errors++;
       }
 
       // TODO: Log warnings maybe?
