@@ -34,8 +34,11 @@ after_script: greenkeeper-lockfile-upload
 after_success: yarn run codecov
 
 deploy:
-  provider: script
-  script: build.sh publish
-  on:
-    branch: master
-    tags: true
+  - provider: script
+    script: build.sh publish
+    on:
+      tags: true
+  - provider: script
+    script: build.sh publish
+    on:
+      branch: master
