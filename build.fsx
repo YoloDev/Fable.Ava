@@ -198,6 +198,19 @@ Target "Test" (fun _ ->
 
 Target "Package" (fun _ -> forAllProjects "pack")
 
+Target "PublishMyget" (fun _ ->
+  projects
+  |> Seq.iter (fun proj ->
+    let dir = IO.Path.GetDirectoryName proj
+    let packages = !!(sprintf "%s/bin/Debug/*.nupkg" dir)
+    packages
+    |> Seq.iter (fun pkg ->
+      //runDotnet dir <| sprintf "nuget push \"%s\" -k \"%s\" -s \"%s\"" pkg (environVar "MYGET_KEY") "https://www.myget.org/F/yolodev/api/v2/package"
+      runPaket dir <| sprintf "push url \"https://www.myget.org/F/yolodev\" file \"%s\" apikey \"%s\"" pkg (environVar "MYGET_KEY")
+    )
+  )
+)
+
 Target "PublishNuget" (fun _ ->
   projects
   |> Seq.iter (fun proj ->
@@ -205,10 +218,11 @@ Target "PublishNuget" (fun _ ->
     let packages = !!(sprintf "%s/bin/Debug/*.nupkg" dir)
     packages
     |> Seq.iter (fun pkg ->
-      runDotnet dir <| sprintf "nuget push \"%s\" -k \"%s\" -s \"%s\"" pkg (environVar "MYGET_KEY") "https://www.myget.org/F/yolodev/api/v2/package"
-      //runPaket dir <| sprintf "push url \"https://www.myget.org/F/yolodev\" file \"%s\" apikey \"%s\"" pkg (environVar "MYGET_KEY")
-      //if isRelease then
-      //  runPaket dir <| sprintf "push url \"https://nuget.org\" file \"%s\" apikey \"%s\"" pkg (environVar "NUGET_KEY")
+      //runDotnet dir <| sprintf "nuget push \"%s\" -k \"%s\" -s \"%s\"" pkg (environVar "MYGET_KEY") "https://www.myget.org/F/yolodev/api/v2/package"
+      if isRelease then
+        runPaket dir <| sprintf "push url \"https://nuget.org\" file \"%s\" apikey \"%s\"" pkg (environVar "NUGET_KEY")
+      else
+        printfn "Skipping nuget publish because version is prerelease: %s" version
     )
   )
 )
@@ -237,12 +251,11 @@ Target "ReleaseDocs" DoNothing
 
 "Build"
   ==> "Package"
-  ==> "PublishNuget"
+  ==> "PublishMyget"
 
-"Publish"
-  <== [ "Build"
-        "PublishNuget"
-        "ReleaseDocs" ]
+"Build"
+  ==> "Package"
+  ==> "PublishNuget"
 
 // start build
 RunTargetOrDefault "Test"

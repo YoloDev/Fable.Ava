@@ -36,11 +36,11 @@ after_success: yarn run codecov
 deploy:
   - provider: script
     skip_cleanup: true
-    script: bash build.sh publish
+    script: bash build.sh publishnuget
     on:
       tags: true
   - provider: script
     skip_cleanup: true
-    script: bash build.sh publish
+    script: bash build.sh publishmyget
     on:
       branch: master
