@@ -152,6 +152,9 @@ let version =
   match procResult.OK with
   | true -> (Seq.head procResult.Messages).Trim ()
   | false -> failwithf "git-version exited with exit code %d. Messages:\n  %s" procResult.ExitCode (String.concat "\n  " procResult.Messages)
+let isRelease = 
+  let semver = Fake.SemVerHelper.parse version
+  Option.isNone semver.PreRelease
 
 // TODO: Do better
 Target "Meta" (fun _ ->
@@ -202,8 +205,10 @@ Target "PublishNuget" (fun _ ->
     let packages = !!(sprintf "%s/bin/Debug/*.nupkg" dir)
     packages
     |> Seq.iter (fun pkg ->
-      runPaket dir <| sprintf "push url \"https://www.myget.org/F/yolodev\" file \"%s\" apikey \"%s\"" pkg (environVar "MYGET_KEY")
-      //runDotnet dir <| sprintf "nuget push \"%s\" -k \"%s\" -s \"%s\"" pkg (environVar "MYGET_KEY") "https://www.myget.org/F/yolodev/api/v2/package"
+      runDotnet dir <| sprintf "nuget push \"%s\" -k \"%s\" -s \"%s\"" pkg (environVar "MYGET_KEY") "https://www.myget.org/F/yolodev/api/v2/package"
+      //runPaket dir <| sprintf "push url \"https://www.myget.org/F/yolodev\" file \"%s\" apikey \"%s\"" pkg (environVar "MYGET_KEY")
+      //if isRelease then
+      //  runPaket dir <| sprintf "push url \"https://nuget.org\" file \"%s\" apikey \"%s\"" pkg (environVar "NUGET_KEY")
     )
   )
 )
