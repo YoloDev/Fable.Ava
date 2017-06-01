@@ -356,4 +356,3 @@ spec {
   do! Assert.snapshot obj
   do! Assert.snapshot obj <?> "snapshot with name"
 } |> addTest "snapshot"
-
