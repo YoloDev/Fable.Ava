@@ -62,6 +62,25 @@ module Assert =
     | IfError (e, s)         -> a.ifError e s; async.Return ()
     | Snapshot (v, s)        -> a.snapshot v s; async.Return ()
   
+  let runSync (a: Asserter) = function
+    | Pass (s)               -> a.pass s
+    | Fail (s)               -> a.fail s
+    | Truthy (v, s)          -> a.isTruthy v s
+    | Falsy (v, s)           -> a.isFalsy v s
+    | True (v, s)            -> a.isTrue v s
+    | False (v, s)           -> a.isFalse v s
+    | Is (v, e, s)           -> a.isSame v e s
+    | Not (v, e, s)          -> a.isNotSame v e s
+    | DeepEqual (v, e, s)    -> a.isDeepEqual v e s
+    | NotDeepEqual (v, e, s) -> a.isNotDeepEqual v e s
+    | Throws (f, s)          -> a.throws f s
+    | NotThrows (f, s)       -> a.doesNotThrow f s
+    | AsyncThrows (f, s)     -> failwithf "Async asserts not supported"
+    | NotAsyncThrows (f, s)  -> failwithf "Async asserts not supported"
+    //| Regex (v, r, s)        -> a.matches v r s; async.Return ()
+    | IfError (e, s)         -> a.ifError e s
+    | Snapshot (v, s)        -> a.snapshot v s
+  
   let internal setMessage msg = function
     | Pass (Some s)
     | Fail (Some s)

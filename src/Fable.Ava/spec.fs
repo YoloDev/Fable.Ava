@@ -3,6 +3,7 @@ namespace Fable.Ava
 open Fable.Core
 open Fable.Import.Ava
 
+
 type SpecContext internal (context: TestContext) =
   let asserter = {
     pass = fun s ->
@@ -13,7 +14,7 @@ type SpecContext internal (context: TestContext) =
     fail = fun s ->
       match s with
       | None -> context.Fail ()
-      | Some s -> context.Pass s
+      | Some s -> context.Fail s
     
     isTruthy = fun v s ->
       match s with
@@ -94,7 +95,7 @@ type SpecContext internal (context: TestContext) =
   member c.Asserter = asserter
   member c.Plan n = context.Plan n
 
-//[<Erase>]
+[<Erase>]
 type Spec<'t> = SpecWrapper of (SpecContext -> Async<'t>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

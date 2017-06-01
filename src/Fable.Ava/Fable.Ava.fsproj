@@ -5,9 +5,11 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="assemblyinfo.fs" />
     <Compile Include="bindings.fs" />
     <Compile Include="assert.fs" />
     <Compile Include="spec.fs" />
+    <Compile Include="testcheck.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.NET.Sdk" Version="1.0.*" PrivateAssets="All" />

@@ -93,7 +93,7 @@ const makeStream = () => {
       results.failures.forEach(failure => {
         output.push('  ' + format.red(failure.name) + ':\n');
         output.push(`    ${failure.diag.name}: ${failure.diag.message}\n`);
-        output.push(`        at ${failure.diag.at}`);
+        output.push(`        at ${failure.diag.at}\n\n`);
       });
       output.push('\n\n');
     }
