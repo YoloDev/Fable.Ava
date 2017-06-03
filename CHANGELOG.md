@@ -1,3 +1,22 @@
+<a name="0.2.0"></a>
+# [0.2.0](https://github.com/YoloDev/Fable.Ava/compare/v0.1.0...v0.2.0) (2017-06-03)
+
+
+### Build
+
+* Add watch capability to build script ([091a94692ee09217e03ac50ab4ecd97269b3db3d](https://github.com/YoloDev/Fable.Ava/commit/091a94692ee09217e03ac50ab4ecd97269b3db3d))
+* Switch to using fable-builder  ([fe48dc5ce3b04a11d0a41bbc4b45926c088a92c1](https://github.com/YoloDev/Fable.Ava/commit/fe48dc5ce3b04a11d0a41bbc4b45926c088a92c1))
+
+### Fix
+
+* Custom size array generator bindings  ([bca9ac05a0ef4ffd46a6c6efd582967c57d8725f](https://github.com/YoloDev/Fable.Ava/commit/bca9ac05a0ef4ffd46a6c6efd582967c57d8725f))
+
+### Update
+
+* Update nyc to the latest version 🚀  ([6e3d721640da1dc62a9344e72c7560ac96c89182](https://github.com/YoloDev/Fable.Ava/commit/6e3d721640da1dc62a9344e72c7560ac96c89182))
+
+
+
 <a name="0.1.0"></a>
 # [0.1.0](https://github.com/YoloDev/Fable.Ava/compare/33bf2cd4b9fdaec31a849e85edf917b7f9f48d36...v0.1.0) (2017-06-01)
 
