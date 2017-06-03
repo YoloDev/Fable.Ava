@@ -21,7 +21,6 @@ let testProjects =
   !! "test/**/*.fsproj"
 
 let rootDir = FullName "."
-let jsCompiler = FullName "./build.js"
 
 // --------------------------------------------------------------------------------------
 // Install
@@ -185,7 +184,7 @@ Target "TestBuild" (fun _ ->
   forAllTests "build"
   Environment.SetEnvironmentVariable ("INSTRUMENT_CODE", "1", EnvironmentVariableTarget.Process)
   // TODO: Specify free port
-  runDotnet (IO.Path.GetDirectoryName <| Seq.head projects) <| sprintf "fable node-run \"%s\"" jsCompiler
+  runDotnet (IO.Path.GetDirectoryName <| Seq.head projects) <| sprintf "fable npm-run build --port free"
 )
 
 Target "Test" (fun _ ->
