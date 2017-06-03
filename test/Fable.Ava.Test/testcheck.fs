@@ -27,7 +27,7 @@ type Person = {
 let addressGen = gen {
   let! street = Generator.alphaNumString
   let! number = Generator.sPosInt
-  
+
   return { street = street; number = number }
 }
 
@@ -47,11 +47,11 @@ Prop.create "custom gen test" personGen <| fun p -> prop {
   | Some a -> do! Assert.isTrue (a.number > 0) <?> "address number is non-negative"
 }
 
-let peopleGen = Generator.listWithOptions (SizeOptions.size 5) personGen
+let peopleGen = Generator.listWithOptions (SizeOptions.exact 5) personGen
 
 Prop.create "list gen test" peopleGen <| fun ps -> prop {
   do! Assert.isTruthy ps <?> "person list is set"
-  do! Assert.isSame (List.length ps) 5 <?> "list length is correct" 
+  do! Assert.isSame (List.length ps) 5 <?> "list length is correct"
 }
 
 let getCall (spy: Spy) (name: string) = prop {
@@ -78,11 +78,11 @@ type AsserterMock () =
   let notDeepEqualSpy = Sinon.spy3
   let throwsSpy = Sinon.spy2
   let notThrowsSpy = Sinon.spy2
-  let throwsAsyncSpy = 
+  let throwsAsyncSpy =
     let stub = Sinon.stub2
     stub.Returns <| async.Zero ()
     stub
-  let notThrowsAsyncSpy = 
+  let notThrowsAsyncSpy =
     let stub = Sinon.stub2
     stub.Returns <| async.Zero ()
     stub
@@ -346,7 +346,7 @@ prop {
   do! shouldThrow (Assert.asyncThrows fn <?> "foo")
 
   // not allowed in sync tests
-  // do! Assert.asyncThrows fn 
+  // do! Assert.asyncThrows fn
   // do! Assert.asyncThrows fn <?> "asyncThrows"
 } |> addTest "asyncThrows"
 
@@ -406,171 +406,121 @@ prop {
   do! Assert.isDeepEqual (Assert.snapshot obj <?> "foo") (Assert.Snapshot (obj, Some "foo"))
   do! mockCall (Assert.snapshot obj) (AsserterMock.snapshot (obj, None))
   do! mockCall (Assert.snapshot obj <?> "foo") (AsserterMock.snapshot (obj, Some "foo"))
-  
+
   do! Assert.snapshot obj
   do! Assert.snapshot obj <?> "snapshot with name"
 } |> addTest "snapshot"
 
-type NativeSizeOpts = Fable.Import.Ava.SizeOptions
-module NativeSizeOpts = Fable.Import.Ava.SizeOptions
-
-Prop.create "bindings > SizeOpts.size" Generator.int <| fun size -> prop {
+Prop.create "testcheck > SizeOpts.exact" Generator.int <| fun size -> prop {
   do! SyncSpec.plan 1
 
   if (size < 0) then
-    do! Assert.throws <| fun () -> NativeSizeOpts.size size |> ignore
+    do! Assert.throws <| fun () -> SizeOptions.exact size |> ignore
   else
-    let actual = NativeSizeOpts.size size
-    let expected = { NativeSizeOpts.size = Some size; NativeSizeOpts.minSize = None; NativeSizeOpts.maxSize = None }
+    let actual = SizeOptions.exact size
+    let expected = Fable.Import.Ava.Exact size
     do! Assert.isDeepEqual actual expected
-}
-
-Prop.create "bindings > SizeOpts.min" Generator.int <| fun size -> prop {
-  do! SyncSpec.plan 1
-
-  if (size < 0) then
-    do! Assert.throws <| fun () -> NativeSizeOpts.min size |> ignore
-  else
-    let actual = NativeSizeOpts.min size
-    let expected = { NativeSizeOpts.size = None; NativeSizeOpts.minSize = Some size; NativeSizeOpts.maxSize = None }
-    do! Assert.isDeepEqual actual expected
-}
-
-Prop.create "bindings > SizeOpts.max" Generator.int <| fun size -> prop {
-  do! SyncSpec.plan 1
-
-  if (size < 0) then
-    do! Assert.throws <| fun () -> NativeSizeOpts.max size |> ignore
-  else
-    let actual = NativeSizeOpts.max size
-    let expected = { NativeSizeOpts.size = None; NativeSizeOpts.minSize = None; NativeSizeOpts.maxSize = Some size }
-    do! Assert.isDeepEqual actual expected
-}
-
-Prop.create "bindings > SizeOpts.between" (Generator.tuple2 Generator.int Generator.int) <| fun (min, max) -> prop {
-  do! SyncSpec.plan 1
-
-  if (min < 0 || max < 0 || min >= max) then
-    do! Assert.throws <| fun () -> NativeSizeOpts.between min max |> ignore
-  else
-    let actual = NativeSizeOpts.between min max
-    let expected = { NativeSizeOpts.size = None; NativeSizeOpts.minSize = Some min; NativeSizeOpts.maxSize = Some max }
-    do! Assert.isDeepEqual actual expected
-}
-
-Prop.create "testcheck > SizeOpts.size" Generator.int <| fun size -> prop {
-  do! SyncSpec.plan 2
-
-  if (size < 0) then
-    do! Assert.throws <| fun () -> SizeOptions.size size |> ignore
-    do! Assert.pass
-  else
-    let actual = SizeOptions.size size
-    let expected = SizeOptions.Size size
-    do! Assert.isDeepEqual actual expected
-    do! Assert.isDeepEqual (SizeOptions.toSizeOptions actual) (NativeSizeOpts.size size)
 }
 
 Prop.create "testcheck > SizeOpts.min" Generator.int <| fun size -> prop {
-  do! SyncSpec.plan 2
+  do! SyncSpec.plan 1
 
   if (size < 0) then
     do! Assert.throws <| fun () -> SizeOptions.min size |> ignore
-    do! Assert.pass
   else
     let actual = SizeOptions.min size
-    let expected = SizeOptions.Min size
+    let expected = Fable.Import.Ava.Min size
     do! Assert.isDeepEqual actual expected
-    do! Assert.isDeepEqual (SizeOptions.toSizeOptions actual) (NativeSizeOpts.min size)
 }
 
 Prop.create "testcheck > SizeOpts.max" Generator.int <| fun size -> prop {
-  do! SyncSpec.plan 2
+  do! SyncSpec.plan 1
 
   if (size < 0) then
     do! Assert.throws <| fun () -> SizeOptions.max size |> ignore
-    do! Assert.pass
   else
     let actual = SizeOptions.max size
-    let expected = SizeOptions.Max size
+    let expected = Fable.Import.Ava.Max size
     do! Assert.isDeepEqual actual expected
-    do! Assert.isDeepEqual (SizeOptions.toSizeOptions actual) (NativeSizeOpts.max size)
 }
 
 Prop.create "testcheck > SizeOpts.between" (Generator.tuple2 Generator.int Generator.int) <| fun (min, max) -> prop {
-  do! SyncSpec.plan 2
+  do! SyncSpec.plan 1
 
   if (min < 0 || max < 0 || min >= max) then
     do! Assert.throws <| fun () -> SizeOptions.between min max |> ignore
-    do! Assert.pass
   else
     let actual = SizeOptions.between min max
-    let expected = SizeOptions.Between (min, max)
+    let expected = Fable.Import.Ava.Between (min, max)
     do! Assert.isDeepEqual actual expected
-    do! Assert.isDeepEqual (SizeOptions.toSizeOptions actual) (NativeSizeOpts.between min max)
 }
 
-let checkGeneratorIsValid (g: Generator<_>) = prop {
+let checkGeneratorIsValid (g: unit -> Generator<_>) = prop {
   do! SyncSpec.plan 2
 
   do! Assert.isTruthy g
 
-  let gen = Generator.unpack g
+  let gen = Generator.unpack (g ())
   do! Assert.isTruthy gen
 }
 
 let inline private const' v _ = v
 let inline private testGenerator name g = addTest (sprintf "Generator.%s" name) (checkGeneratorIsValid g)
+let inline private testGeneratorWithSizes name f =
+  addTest (sprintf "Generator.%s (exact)" name) (checkGeneratorIsValid <| fun () -> f <| SizeOptions.exact 5)
+  addTest (sprintf "Generator.%s (min)" name) (checkGeneratorIsValid <| fun () -> f <| SizeOptions.min 5)
+  addTest (sprintf "Generator.%s (max)" name) (checkGeneratorIsValid <| fun () -> f <| SizeOptions.max 5)
+  addTest (sprintf "Generator.%s (between)" name) (checkGeneratorIsValid <| fun () -> f <| SizeOptions.between 1 5)
 
 // These tests are there to ensure the Emite attributes are at least valid.
 // In case there are string-name errors, this should fail.
-testGenerator "nil" <| Generator.nil
-testGenerator "optional" <| Generator.optional Generator.nil
-testGenerator "notEmpty" <| Generator.notEmpty Generator.nil
-testGenerator "filter" <| Generator.filter (const' true) Generator.nil
-testGenerator "bind" <| Generator.bind (const' Generator.nil) Generator.nil
-testGenerator "unit" <| Generator.unit ()
-testGenerator "map" <| Generator.map id Generator.nil
-testGenerator "scale" <| Generator.scale id Generator.nil
-testGenerator "neverShrink" <| Generator.neverShrink Generator.nil
-testGenerator "alwaysShrink" <| Generator.alwaysShrink Generator.nil
-testGenerator "any" <| Generator.any
-testGenerator "primitive" <| Generator.primitive
-testGenerator "bool" <| Generator.bool
-testGenerator "undefined" <| Generator.undefined
-testGenerator "notANumber" <| Generator.notANumber
-testGenerator "number" <| Generator.number
-testGenerator "posNumber" <| Generator.posNumber
-testGenerator "negNumber" <| Generator.negNumber
-testGenerator "numberWithin" <| Generator.numberWithin 0. 10.
-testGenerator "int" <| Generator.int
-testGenerator "posInt" <| Generator.posInt
-testGenerator "negInt" <| Generator.negInt
-testGenerator "sPosInt" <| Generator.sPosInt
-testGenerator "sNegInt" <| Generator.sNegInt
-testGenerator "intWithin" <| Generator.intWithin 0 10
-testGenerator "string" <| Generator.string
-testGenerator "asciiString" <| Generator.asciiString
-testGenerator "alphaNumString" <| Generator.alphaNumString
-testGenerator "substring" <| Generator.substring "abc"
-testGenerator "char" <| Generator.char
-testGenerator "asciiChar" <| Generator.asciiChar
-testGenerator "alphaNumChar" <| Generator.alphaNumChar
-testGenerator "array" <| Generator.array Generator.nil
-testGenerator "list" <| Generator.list Generator.nil
-testGenerator "arrayWithOptions" <| Generator.arrayWithOptions (SizeOptions.size 5) Generator.nil
-testGenerator "listWithOptions" <| Generator.listWithOptions (SizeOptions.size 5) Generator.nil
-testGenerator "tuple2" <| Generator.tuple2 Generator.nil Generator.nil
-testGenerator "tuple3" <| Generator.tuple3 Generator.nil Generator.nil Generator.nil
-testGenerator "tuple4" <| Generator.tuple4 Generator.nil Generator.nil Generator.nil Generator.nil
-testGenerator "tuple5" <| Generator.tuple5 Generator.nil Generator.nil Generator.nil Generator.nil Generator.nil
-testGenerator "uniqueArray" <| Generator.uniqueArray Generator.nil
-testGenerator "uniqueList" <| Generator.uniqueList Generator.nil
-testGenerator "uniqueArrayWithOptions" <| Generator.uniqueArrayWithOptions (SizeOptions.size 5) Generator.nil
-testGenerator "uniqueListWithOptions" <| Generator.uniqueListWithOptions (SizeOptions.size 5) Generator.nil
-testGenerator "uniqueArrayBy" <| Generator.uniqueArrayBy id Generator.nil
-testGenerator "uniqueListBy" <| Generator.uniqueListBy id Generator.nil
-testGenerator "uniqueArrayByWithOptions" <| Generator.uniqueArrayByWithOptions (SizeOptions.size 5) id Generator.nil
-testGenerator "uniqueListByWithOptions" <| Generator.uniqueListByWithOptions (SizeOptions.size 5) id Generator.nil
-testGenerator "oneOf" <| Generator.oneOf [Generator.nil; Generator.nil]
-testGenerator "sized" <| Generator.sized (const' Generator.nil)
+testGenerator "nil" <| fun () -> Generator.nil
+testGenerator "optional" <| fun () -> Generator.optional Generator.nil
+testGenerator "notEmpty" <| fun () -> Generator.notEmpty Generator.nil
+testGenerator "filter" <| fun () -> Generator.filter (const' true) Generator.nil
+testGenerator "bind" <| fun () -> Generator.bind (const' Generator.nil) Generator.nil
+testGenerator "unit" <| fun () -> Generator.unit ()
+testGenerator "map" <| fun () -> Generator.map id Generator.nil
+testGenerator "scale" <| fun () -> Generator.scale id Generator.nil
+testGenerator "neverShrink" <| fun () -> Generator.neverShrink Generator.nil
+testGenerator "alwaysShrink" <| fun () -> Generator.alwaysShrink Generator.nil
+testGenerator "any" <| fun () -> Generator.any
+testGenerator "primitive" <| fun () -> Generator.primitive
+testGenerator "bool" <| fun () -> Generator.bool
+testGenerator "undefined" <| fun () -> Generator.undefined
+testGenerator "notANumber" <| fun () -> Generator.notANumber
+testGenerator "number" <| fun () -> Generator.number
+testGenerator "posNumber" <| fun () -> Generator.posNumber
+testGenerator "negNumber" <| fun () -> Generator.negNumber
+testGenerator "numberWithin" <| fun () -> Generator.numberWithin 0. 10.
+testGenerator "int" <| fun () -> Generator.int
+testGenerator "posInt" <| fun () -> Generator.posInt
+testGenerator "negInt" <| fun () -> Generator.negInt
+testGenerator "sPosInt" <| fun () -> Generator.sPosInt
+testGenerator "sNegInt" <| fun () -> Generator.sNegInt
+testGenerator "intWithin" <| fun () -> Generator.intWithin 0 10
+testGenerator "string" <| fun () -> Generator.string
+testGenerator "asciiString" <| fun () -> Generator.asciiString
+testGenerator "alphaNumString" <| fun () -> Generator.alphaNumString
+testGenerator "substring" <| fun () -> Generator.substring "abc"
+testGenerator "char" <| fun () -> Generator.char
+testGenerator "asciiChar" <| fun () -> Generator.asciiChar
+testGenerator "alphaNumChar" <| fun () -> Generator.alphaNumChar
+testGenerator "array" <| fun () -> Generator.array Generator.nil
+testGenerator "list" <| fun () -> Generator.list Generator.nil
+testGeneratorWithSizes "arrayWithOptions" <| fun opts -> Generator.arrayWithOptions opts Generator.nil
+testGeneratorWithSizes "listWithOptions" <| fun opts -> Generator.listWithOptions opts Generator.nil
+testGenerator "tuple2" <| fun () -> Generator.tuple2 Generator.nil Generator.nil
+testGenerator "tuple3" <| fun () -> Generator.tuple3 Generator.nil Generator.nil Generator.nil
+testGenerator "tuple4" <| fun () -> Generator.tuple4 Generator.nil Generator.nil Generator.nil Generator.nil
+testGenerator "tuple5" <| fun () -> Generator.tuple5 Generator.nil Generator.nil Generator.nil Generator.nil Generator.nil
+testGenerator "uniqueArray" <| fun () -> Generator.uniqueArray Generator.nil
+testGenerator "uniqueList" <| fun () -> Generator.uniqueList Generator.nil
+testGeneratorWithSizes "uniqueArrayWithOptions" <| fun opts -> Generator.uniqueArrayWithOptions opts Generator.nil
+testGeneratorWithSizes "uniqueListWithOptions" <| fun opts -> Generator.uniqueListWithOptions opts Generator.nil
+testGenerator "uniqueArrayBy" <| fun () -> Generator.uniqueArrayBy id Generator.nil
+testGenerator "uniqueListBy" <| fun () -> Generator.uniqueListBy id Generator.nil
+testGeneratorWithSizes "uniqueArrayByWithOptions" <| fun opts -> Generator.uniqueArrayByWithOptions opts id Generator.nil
+testGeneratorWithSizes "uniqueListByWithOptions" <| fun opts -> Generator.uniqueListByWithOptions opts id Generator.nil
+testGenerator "oneOf" <| fun () -> Generator.oneOf [Generator.nil; Generator.nil]
+testGenerator "sized" <| fun () -> Generator.sized (const' Generator.nil)

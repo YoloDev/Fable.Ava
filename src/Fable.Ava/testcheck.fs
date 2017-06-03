@@ -5,44 +5,29 @@ open Fable.Import.Ava
 
 type NativeGen<'t> = NativeGenerator<'t>
 module NativeGen = NativeGenerator
-module NativeSizeOptions = Fable.Import.Ava.SizeOptions
-
-type SizeOptions =
-| Size of int
-| Min of int
-| Max of int
-| Between of min: int * max: int
 
 [<RequireQualifiedAccess>]
 module SizeOptions =
-  let size size =
+  let exact size =
     if (size < 0) then failwith "size needs to be a positive number"
-    else Size size
+    else Exact size
   let min size =
     if (size < 0) then failwith "min needs to be a positive number"
     else Min size
   let max size =
     if (size < 0) then failwith "max needs to be a positive number"
     else Max size
-  let between min max = 
+  let between min max =
     if   (min < 0) then failwith "min needs to be a positive number"
     elif (max < 0) then failwith "max needs to be a positive number"
     elif (min >= max) then failwith "min needs to be less than max"
     else Between (min, max)
-
-  let internal toSizeOptions =
-    function
-    | Size x             -> NativeSizeOptions.size x
-    | Min x              -> NativeSizeOptions.min x
-    | Max x              -> NativeSizeOptions.max x
-    | Between (min, max) -> NativeSizeOptions.between min max
 
 [<Erase>]
 type Generator<'t> = private Generator of NativeGen<'t>
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Generator =
-  let inline private sizeOpts o = SizeOptions.toSizeOptions o
   let internal unpack (Generator g) = g
 
   let optional (Generator g) = g.Nullable |> Generator
@@ -51,7 +36,7 @@ module Generator =
   let bind f (Generator g) = g.Then (f >> unpack) |> Generator
   let unit x = Generator <| NativeGen.ret x
   let map f g = bind (f >> unit) g
-  
+
   let scale f (Generator g) = g.Scale f |> Generator
   let neverShrink (Generator g) = g.NeverShrink |> Generator
   let alwaysShrink (Generator g) = g.AlwaysShrink |> Generator
@@ -81,7 +66,7 @@ module Generator =
   let alphaNumChar = Generator <| NativeGen.alphaNumChar
   let array g = Generator <| NativeGen.array (unpack g)
   let list g = array g |> map List.ofArray
-  let arrayWithOptions o g = Generator <| NativeGen.arrayWithOptions (unpack g, sizeOpts o)
+  let arrayWithOptions o g = Generator <| NativeGen.arrayWithOptions (unpack g, o)
   let listWithOptions o g = arrayWithOptions o g |> map List.ofArray
   let tuple2 g1 g2 = Generator <| NativeGen.tuple2 (unpack g1, unpack g2)
   let tuple3 g1 g2 g3 = Generator <| NativeGen.tuple3 (unpack g1, unpack g2, unpack g3)
@@ -89,11 +74,11 @@ module Generator =
   let tuple5 g1 g2 g3 g4 g5 = Generator <| NativeGen.tuple5 (unpack g1, unpack g2, unpack g3, unpack g4, unpack g5)
   let uniqueArray g = Generator <| NativeGen.uniqueArray (unpack g)
   let uniqueList g = uniqueArray g |> map List.ofArray
-  let uniqueArrayWithOptions o g = Generator <| NativeGen.uniqueArrayWithOptions (unpack g, sizeOpts o)
+  let uniqueArrayWithOptions o g = Generator <| NativeGen.uniqueArrayWithOptions (unpack g, o)
   let uniqueListWithOptions o g = uniqueArrayWithOptions o g |> map List.ofArray
   let uniqueArrayBy f g = Generator <| NativeGen.uniqueArrayBy (unpack g, f)
   let uniqueListBy f g = uniqueArrayBy f g |> map List.ofArray
-  let uniqueArrayByWithOptions o f g = Generator <| NativeGen.uniqueArrayByWithOptions (unpack g, f, sizeOpts o)
+  let uniqueArrayByWithOptions o f g = Generator <| NativeGen.uniqueArrayByWithOptions (unpack g, f, o)
   let uniqueListByWithOptions o f g = uniqueArrayByWithOptions o f g |> map List.ofArray
   let oneOf gs = Generator <| NativeGen.oneOf (gs |> List.map unpack |> Array.ofList)
   let sized f = Generator <| NativeGen.sized (f >> unpack)
@@ -132,8 +117,8 @@ module SyncSpec =
   let plan n = create <| fun t -> t.Plan n
 
 module Test =
-  let create (name: string) (test: SyncSpec<unit>) = 
-    Test.create name <| fun t -> 
+  let create (name: string) (test: SyncSpec<unit>) =
+    Test.create name <| fun t ->
       SyncSpec.run test (SpecContext t)
       SyncSpec.resolvedPromise
 
@@ -190,7 +175,7 @@ module private Hijack =
     let plan = ref None
     let assertions = ref 0
 
-    fun arg -> 
+    fun arg ->
       let test = JsInterop.jsThis
       hack test plan assertions
       let result = _call (fn, test, arg)
@@ -199,7 +184,7 @@ module private Hijack =
       | Some x -> _setPlannedCount (test, x)
       _setAssertCount (test, !assertions)
       result
-  
+
   [<Emit("Hijack._hijack($0)")>]
   let hijack (fn: 'a -> 'b): ('a -> 'b) = jsNative
 

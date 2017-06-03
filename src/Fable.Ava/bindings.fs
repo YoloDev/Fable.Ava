@@ -3,6 +3,7 @@ module Fable.Import.Ava
 open System
 open Fable.Core
 open Fable.Import.JS
+open Fable.Core.JsInterop
 
 // ava
 //
@@ -88,7 +89,7 @@ module Test =
 
   [<Import("default", from="ava"); Emit("$0.before($1,$2)")>]
   let before (name: string) (impl: TestImpl): unit = jsNative
-  
+
   [<Import("default", from="ava"); Emit("$0.after($1)")>]
   let after' (impl: TestImpl): unit = jsNative
 
@@ -100,7 +101,7 @@ module Test =
 
   [<Import("default", from="ava"); Emit("$0.beforeEach($1,$2)")>]
   let beforeEach (name: string) (impl: TestImpl): unit = jsNative
-  
+
   [<Import("default", from="ava"); Emit("$0.afterEach($1)")>]
   let afterEach' (impl: TestImpl): unit = jsNative
 
@@ -111,12 +112,18 @@ module Test =
 // ava-check
 //
 
-[<Pojo>]
-type SizeOptions = {
-  size: int option
-  minSize: int option
-  maxSize: int option
-}
+type SizeOptions =
+| Exact of int
+| Min of int
+| Max of int
+| Between of min: int * max: int
+  with
+    static member ToPojo (opts: SizeOptions) =
+      match opts with
+      | Exact i            -> createObj [ "size" ==> i ]
+      | Min i              -> createObj [ "min" ==> i ]
+      | Max i              -> createObj [ "max" ==> i ]
+      | Between (min, max) -> createObj [ "min" ==> min; "max" ==> max ]
 
 [<Pojo>]
 type CheckOptions = {
@@ -125,21 +132,6 @@ type CheckOptions = {
   seed: int option
 }
 
-module SizeOptions =
-  let size n = 
-    if (n < 0) then failwith "size has to be a positive number"
-    else { size = Some n; minSize = None; maxSize = None }
-  let min n = 
-    if (n < 0) then failwith "min has to be a positive number"
-    else { size = None; minSize = Some n; maxSize = None }
-  let max n = 
-    if (n < 0) then failwith "max has to be a positive number"
-    else { size = None; minSize = None; maxSize = Some n }
-  let between min max = 
-    if   (min < 0) then failwith "min has to be a positive number"
-    elif (max < 0) then failwith "max has to be a positive number"
-    elif (max <= min) then failwith "min has to be greater than max"
-    else { size = None; minSize = Some min; maxSize = Some max }
 
 [<Sealed; Erase>]
 type NativeGenerator<'t> private () =
@@ -148,7 +140,7 @@ type NativeGenerator<'t> private () =
   member gen.Nullable: NativeGenerator<'t option> = jsNative
 
   /// Creates a new Generator which generates non-empty values.
-  /// 
+  ///
   /// Examples of empty values are 0, "", null, [], and {}
   [<Emit("$0.notEmpty()")>]
   member gen.NotEmpty: NativeGenerator<'t> = jsNative
@@ -297,7 +289,8 @@ module NativeGenerator =
   let array (gen: NativeGenerator<'a>): NativeGenerator<'a array> = jsNative
 
   [<Import("gen", from="ava-check"); Emit("$0.array($1,$2)")>]
-  let arrayWithOptions (gen: NativeGenerator<'a>, opts: SizeOptions): NativeGenerator<'a array> = jsNative
+  let private arrayWithOptions' (gen: NativeGenerator<'a>, opts: obj): NativeGenerator<'a array> = jsNative
+  let arrayWithOptions (gen, opts) = arrayWithOptions' (gen, SizeOptions.ToPojo opts)
 
   [<Import("gen", from="ava-check"); Emit("$0.array([$1,$2])")>]
   let tuple2 (g1: NativeGenerator<'a>, g2: NativeGenerator<'b>): NativeGenerator<'a * 'b> = jsNative
@@ -315,13 +308,15 @@ module NativeGenerator =
   let uniqueArray (gen: NativeGenerator<'a>): NativeGenerator<'a array> = jsNative
 
   [<Import("gen", from="ava-check"); Emit("$0.uniqueArray($1,$2)")>]
-  let uniqueArrayWithOptions (gen: NativeGenerator<'a>, opts: SizeOptions): NativeGenerator<'a array> = jsNative
+  let private uniqueArrayWithOptions' (gen: NativeGenerator<'a>, opts: obj): NativeGenerator<'a array> = jsNative
+  let uniqueArrayWithOptions (gen, opts) = uniqueArrayWithOptions' (gen, SizeOptions.ToPojo opts)
 
   [<Import("gen", from="ava-check"); Emit("$0.uniqueArray($1,$2)")>]
   let uniqueArrayBy (gen: NativeGenerator<'a>, fn: 'a -> 'b): NativeGenerator<'a array> = jsNative
 
   [<Import("gen", from="ava-check"); Emit("$0.uniqueArray($1,$2,$3)")>]
-  let uniqueArrayByWithOptions (gen: NativeGenerator<'a>, fn: 'a -> 'b, opts: SizeOptions): NativeGenerator<'a array> = jsNative
+  let private uniqueArrayByWithOptions' (gen: NativeGenerator<'a>, fn: 'a -> 'b, opts: obj): NativeGenerator<'a array> = jsNative
+  let uniqueArrayByWithOptions (gen, fn, opts) = uniqueArrayByWithOptions' (gen, fn, SizeOptions.ToPojo opts)
 
   // TODO: Figure out how to type object generators - likely using Map, or a new "magic wrapper erased" type
 
