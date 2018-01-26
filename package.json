@@ -2,7 +2,7 @@
   "name": "fable-ava",
   "private": true,
   "devDependencies": {
-    "ava": "^0.19.1",
+    "ava": "^0.25.0",
     "ava-check": "^1.0.0-rc.0",
     "babel-core": "^6.24.1",
     "babel-plugin-import-rename": "^1.0.1",
